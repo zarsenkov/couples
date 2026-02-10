@@ -1,38 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// Оставляем только те иконки, которые точно не вызывают ошибок. 
-// Если и они вызовут — заменим на Emoji.
-import { Heart, ChevronLeft } from 'lucide-react';
+// Мы импортируем только базовые вещи, которые не ломают билд
 import { STORIES } from './data';
 
 export default function App() {
-  // --- СОСТОЯНИЯ (STATE) ---
-  // Управляет текущим экраном: setup, lobby, quest, results
+  // --- СОСТОЯНИЯ ---
+  // Управление экранами: setup, lobby, quest, results
   const [screen, setScreen] = useState('setup'); 
-  
-  // Имена игроков из локального хранилища браузера
   const [names, setNames] = useState({ 
     p1: localStorage.getItem('ls_p1') || '', 
     p2: localStorage.getItem('ls_p2') || '' 
   });
 
-  const [currentStory, setCurrentStory] = useState(null); // ID истории
-  const [phaseIdx, setPhaseIdx] = useState(0);           // Индекс фазы
-  const [stepIdx, setStepIdx] = useState(0);             // Индекс шага
-  const [honestyScore, setHonestyScore] = useState(0);   // Баллы за честность
-  const [totalQuestions, setTotalQuestions] = useState(0); // Счетчик вопросов
-  const [showDuel, setShowDuel] = useState(false);       // Флаг модалки жребия
-  const [showHonesty, setShowHonesty] = useState(false); // Флаг модалки честности
-  const [winner, setWinner] = useState(null);            // Победитель дуэли
+  const [currentStory, setCurrentStory] = useState(null);
+  const [phaseIdx, setPhaseIdx] = useState(0);
+  const [stepIdx, setStepIdx] = useState(0);
+  const [honestyScore, setHonestyScore] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [showDuel, setShowDuel] = useState(false);
+  const [showHonesty, setShowHonesty] = useState(false);
+  const [winner, setWinner] = useState(null);
 
   // --- ЭФФЕКТЫ ---
-  // Авто-вход, если имена уже есть
+  // Авто-вход при наличии имен
   useEffect(() => {
     if (names.p1 && names.p2) setScreen('lobby');
   }, [names]);
 
   // --- ЛОГИКА ---
-  // Сохранение профилей и переход к выбору
+  // Сохранение имен
   const handleStart = () => {
     if (names.p1.trim().length < 2 || names.p2.trim().length < 2) return;
     localStorage.setItem('ls_p1', names.p1);
@@ -40,7 +36,7 @@ export default function App() {
     setScreen('lobby');
   };
 
-  // Старт квеста
+  // Начало сюжета
   const startStory = (id) => {
     setCurrentStory(id);
     setPhaseIdx(0);
@@ -50,16 +46,16 @@ export default function App() {
     setScreen('quest');
   };
 
-  // Логика кнопки "Верю"
+  // Кнопка честности
   const rateHonesty = (isHonest) => {
     if (isHonest) setHonestyScore(prev => prev + 1);
     setShowHonesty(false);
     setStepIdx(prev => prev + 1);
   };
 
-  // Механика рандомного выбора игрока
+  // Жребий (Дуэль)
   const runDuel = () => {
-    setWinner("⏳...");
+    setWinner("⌛...");
     setTimeout(() => {
       const lucky = Math.random() > 0.5 ? names.p1 : names.p2;
       setWinner(lucky.toUpperCase());
@@ -71,7 +67,7 @@ export default function App() {
     }, 1200);
   };
 
-  // Рендер контента: NPC или Карточка
+  // Отрисовка контента
   const renderQuest = () => {
     const story = STORIES[currentStory];
     const phase = story.phases[phaseIdx];
@@ -129,7 +125,7 @@ export default function App() {
   return (
     <div className="app-shell" style={{ backgroundColor: currentStory ? STORIES[currentStory].phases[phaseIdx].bg : '#fff0f3' }}>
       
-      {/* ЭКРАН 1: SETUP */}
+      {/* ЭКРАН ВХОДА */}
       {screen === 'setup' && (
         <section className="screen active">
           <div className="hero"><h1>LOVE<span>STORY</span></h1></div>
@@ -141,7 +137,7 @@ export default function App() {
         </section>
       )}
 
-      {/* ЭКРАН 2: LOBBY */}
+      {/* ЭКРАН ЛОББИ */}
       {screen === 'lobby' && (
         <section className="screen active">
           <div className="lobby-header"><h2>СЮЖЕТЫ</h2> 📖</div>
@@ -151,21 +147,21 @@ export default function App() {
                 <div className="story-icon">{STORIES[id].coverIcon}</div>
                 <h3>{STORIES[id].title}</h3>
               </div>
+             Dashboard</div>
             ))}
           </div>
         </section>
       )}
 
-      {/* ЭКРАН 3: QUEST */}
+      {/* ЭКРАН КВЕСТА */}
       {screen === 'quest' && (
         <section className="screen active">
           <div className="quest-header">
-            <button className="btn-mini" onClick={() => setScreen('lobby')}><ChevronLeft /></button>
-            <div className="progress-heart"><Heart fill="#ff4d6d" color="#ff4d6d" /></div>
+            <button className="btn-mini" onClick={() => setScreen('lobby')}>◀</button>
+            <div className="progress-heart">❤️</div>
           </div>
           {renderQuest()}
 
-          {/* МОДАЛКА ЖРЕБИЯ */}
           <AnimatePresence>
             {showDuel && (
               <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="overlay">
@@ -177,7 +173,6 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          {/* МОДАЛКА ЧЕСТНОСТИ */}
           <AnimatePresence>
             {showHonesty && (
               <motion.div initial={{y:300}} animate={{y:0}} exit={{y:300}} className="overlay-bottom">
@@ -194,15 +189,15 @@ export default function App() {
         </section>
       )}
 
-      {/* ЭКРАН 4: RESULTS */}
+      {/* ЭКРАН РЕЗУЛЬТАТОВ */}
       {screen === 'results' && (
         <section className="screen active result-screen">
           <div className="clay-card">
-            <div style={{fontSize: '3rem'}}>🏆</div>
+            <div style={{fontSize: '3rem'}}>🎉</div>
             <h2>ИТОГ:</h2>
             <div className="big-score">{totalQuestions > 0 ? Math.round((honestyScore/totalQuestions)*100) : 100}%</div>
-            <p>искренности</p>
-            <button className="btn-clay primary" onClick={() => setScreen('lobby')}>В ЛОББИ</button>
+            <p>вашей искренности</p>
+            <button className="btn-clay primary" onClick={() => setScreen('lobby')}>ВЕРНУТЬСЯ</button>
           </div>
         </section>
       )}
