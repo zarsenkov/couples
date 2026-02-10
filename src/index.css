@@ -1,0 +1,60 @@
+:root {
+    --p-pink: #ffafbd;
+    --p-rose: #ff8fa3;
+    --p-dark: #ff4d6d;
+    --clay-shadow: 8px 8px 16px rgba(255, 143, 163, 0.2), -8px -8px 16px #ffffff;
+}
+
+body { font-family: 'Montserrat', sans-serif; margin: 0; overflow: hidden; }
+
+.app-shell { height: 100vh; padding: 20px; transition: background 0.5s ease; }
+
+.clay-card, .clay-box {
+    background: #ffffff; border-radius: 30px; box-shadow: var(--clay-shadow);
+    padding: 25px; border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.btn-clay {
+    border: none; padding: 15px 25px; border-radius: 20px; font-weight: 900;
+    box-shadow: var(--clay-shadow); cursor: pointer; transition: 0.2s;
+}
+
+.btn-clay.primary { background: var(--p-rose); color: white; width: 100%; }
+
+.joy-input {
+    width: 100%; padding: 15px; border-radius: 15px; border: none;
+    background: #fdf2f4; outline: none; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
+}
+
+.love-jar {
+    width: 50px; height: 50px; border-radius: 50%; background: #eee;
+    position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+}
+
+.liquid {
+    position: absolute; bottom: 0; width: 100%; background: var(--p-dark);
+    transition: height 0.5s ease;
+}
+
+.duel-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+
+.wheel {
+    width: 150px; height: 150px; border-radius: 50%; background: var(--p-rose);
+    display: flex; align-items: center; justify-content: center; font-weight: 900;
+    color: white; font-size: 1.5rem; margin-bottom: 20px;
+}
+
+.spinning { animation: rotate 0.5s linear infinite; }
+
+@keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.honesty-overlay {
+    position: fixed; bottom: 0; left: 0; right: 0; padding: 20px; z-index: 101;
+}
+
+.honesty-btns { display: flex; gap: 10px; margin-top: 15px; }
+.btn-clay.green { background: #26de81; color: white; flex: 1; }
+.btn-clay.red { background: #ff6b6b; color: white; flex: 1; }
