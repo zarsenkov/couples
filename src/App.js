@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// Мы импортируем только базовые вещи, которые не ломают билд
+// Импортируем только данные из твоего файла
 import { STORIES } from './data';
 
 export default function App() {
   // --- СОСТОЯНИЯ ---
-  // Управление экранами: setup, lobby, quest, results
+  // screen: какой экран показывать сейчас
   const [screen, setScreen] = useState('setup'); 
+  // names: имена, которые мы храним в браузере
   const [names, setNames] = useState({ 
     p1: localStorage.getItem('ls_p1') || '', 
     p2: localStorage.getItem('ls_p2') || '' 
@@ -22,13 +23,13 @@ export default function App() {
   const [winner, setWinner] = useState(null);
 
   // --- ЭФФЕКТЫ ---
-  // Авто-вход при наличии имен
+  // Проверка: если имена уже есть, идем в лобби
   useEffect(() => {
     if (names.p1 && names.p2) setScreen('lobby');
   }, [names]);
 
-  // --- ЛОГИКА ---
-  // Сохранение имен
+  // --- ФУНКЦИИ ---
+  // Обработка кнопки "Начать"
   const handleStart = () => {
     if (names.p1.trim().length < 2 || names.p2.trim().length < 2) return;
     localStorage.setItem('ls_p1', names.p1);
@@ -36,7 +37,7 @@ export default function App() {
     setScreen('lobby');
   };
 
-  // Начало сюжета
+  // Выбор конкретной истории
   const startStory = (id) => {
     setCurrentStory(id);
     setPhaseIdx(0);
@@ -46,16 +47,9 @@ export default function App() {
     setScreen('quest');
   };
 
-  // Кнопка честности
-  const rateHonesty = (isHonest) => {
-    if (isHonest) setHonestyScore(prev => prev + 1);
-    setShowHonesty(false);
-    setStepIdx(prev => prev + 1);
-  };
-
-  // Жребий (Дуэль)
+  // Механика "Колеса судьбы" через текстовый рандом
   const runDuel = () => {
-    setWinner("⌛...");
+    setWinner("⏳...");
     setTimeout(() => {
       const lucky = Math.random() > 0.5 ? names.p1 : names.p2;
       setWinner(lucky.toUpperCase());
@@ -67,7 +61,7 @@ export default function App() {
     }, 1200);
   };
 
-  // Отрисовка контента
+  // Основная логика карточек
   const renderQuest = () => {
     const story = STORIES[currentStory];
     const phase = story.phases[phaseIdx];
@@ -86,7 +80,6 @@ export default function App() {
     }
 
     const card = phase.cards[stepIdx - phase.npc.length];
-    
     if (!card) {
       if (phaseIdx < story.phases.length - 1) {
         setPhaseIdx(phaseIdx + 1);
@@ -125,7 +118,7 @@ export default function App() {
   return (
     <div className="app-shell" style={{ backgroundColor: currentStory ? STORIES[currentStory].phases[phaseIdx].bg : '#fff0f3' }}>
       
-      {/* ЭКРАН ВХОДА */}
+      {/* ЭКРАН 1: SETUP */}
       {screen === 'setup' && (
         <section className="screen active">
           <div className="hero"><h1>LOVE<span>STORY</span></h1></div>
@@ -137,7 +130,7 @@ export default function App() {
         </section>
       )}
 
-      {/* ЭКРАН ЛОББИ */}
+      {/* ЭКРАН 2: LOBBY */}
       {screen === 'lobby' && (
         <section className="screen active">
           <div className="lobby-header"><h2>СЮЖЕТЫ</h2> 📖</div>
@@ -147,40 +140,48 @@ export default function App() {
                 <div className="story-icon">{STORIES[id].coverIcon}</div>
                 <h3>{STORIES[id].title}</h3>
               </div>
-             Dashboard</div>
             ))}
           </div>
         </section>
       )}
 
-      {/* ЭКРАН КВЕСТА */}
+      {/* ЭКРАН 3: QUEST */}
       {screen === 'quest' && (
         <section className="screen active">
           <div className="quest-header">
-            <button className="btn-mini" onClick={() => setScreen('lobby')}>◀</button>
+            <button className="btn-mini" onClick={() => setScreen('lobby')}>◀ Назад</button>
             <div className="progress-heart">❤️</div>
           </div>
           {renderQuest()}
 
+          {/* КОЛЕСО / ДУЭЛЬ */}
           <AnimatePresence>
             {showDuel && (
               <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="overlay">
                 <div className="clay-box duel-modal">
                   <div className="wheel-placeholder">{winner || "?"}</div>
-                  <button className="btn-clay primary" onClick={runDuel} disabled={winner}>УЗНАТЬ</button>
+                  <button className="btn-clay primary" onClick={runDuel} disabled={winner}>ЖРЕБИЙ</button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
+          {/* МОДАЛКА ЧЕСТНОСТИ */}
           <AnimatePresence>
             {showHonesty && (
               <motion.div initial={{y:300}} animate={{y:0}} exit={{y:300}} className="overlay-bottom">
                 <div className="clay-box honesty-modal">
                   <h3>ПАРТНЕР НЕ СОЛГАЛ?</h3>
-                  <div className="honesty-row">
-                    <button className="btn-clay green" onClick={() => rateHonesty(true)}>ВЕРЮ</button>
-                    <button className="btn-clay red" onClick={() => rateHonesty(false)}>НЕТ</button>
+                  <div className="honesty-row" style={{display: 'flex', gap: '10px'}}>
+                    <button className="btn-clay" style={{background: '#26de81', color: 'white', flex: 1}} onClick={() => {
+                        if (totalQuestions > 0) setHonestyScore(prev => prev + 1);
+                        setShowHonesty(false);
+                        setStepIdx(prev => prev + 1);
+                    }}>ВЕРЮ</button>
+                    <button className="btn-clay" style={{background: '#ff6b6b', color: 'white', flex: 1}} onClick={() => {
+                        setShowHonesty(false);
+                        setStepIdx(prev => prev + 1);
+                    }}>НЕТ</button>
                   </div>
                 </div>
               </motion.div>
@@ -189,15 +190,17 @@ export default function App() {
         </section>
       )}
 
-      {/* ЭКРАН РЕЗУЛЬТАТОВ */}
+      {/* ЭКРАН 4: RESULTS */}
       {screen === 'results' && (
         <section className="screen active result-screen">
-          <div className="clay-card">
+          <div className="clay-card" style={{textAlign: 'center'}}>
             <div style={{fontSize: '3rem'}}>🎉</div>
             <h2>ИТОГ:</h2>
-            <div className="big-score">{totalQuestions > 0 ? Math.round((honestyScore/totalQuestions)*100) : 100}%</div>
-            <p>вашей искренности</p>
-            <button className="btn-clay primary" onClick={() => setScreen('lobby')}>ВЕРНУТЬСЯ</button>
+            <div className="big-score" style={{fontSize: '3rem', fontWeight: 900, color: '#ff4d6d'}}>
+              {totalQuestions > 0 ? Math.round((honestyScore/totalQuestions)*100) : 100}%
+            </div>
+            <p>искренности</p>
+            <button className="btn-clay primary" onClick={() => setScreen('lobby')}>В ЛОББИ</button>
           </div>
         </section>
       )}
