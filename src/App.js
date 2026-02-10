@@ -1,13 +1,12 @@
-// --- ИМПОРТЫ ---
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// Импортируем иконки, используя безопасные названия
+// Импортируем только стандартные иконки, которые точно есть в Lucide
 import { 
   Heart, 
   ChevronLeft, 
   RotateCcw, 
-  UserRound as UserHeart, // Вместо отсутствующей UserHeart
-  BookText as BookHeart,   // Вместо отсутствующей BookHeart
+  User as UserHeart, // Используем User вместо UserHeart
+  Book as BookHeart, // Используем Book вместо BookHeart
   Volume2, 
   VolumeX 
 } from 'lucide-react';
@@ -15,31 +14,35 @@ import { STORIES } from './data';
 
 export default function App() {
   // --- СОСТОЯНИЯ (STATE) ---
-  // screen: текущий экран приложения
+  
+  // Отвечает за активный экран (setup -> lobby -> quest -> results)
   const [screen, setScreen] = useState('setup'); 
-  // names: имена игроков, загружаемые из локального хранилища
+  
+  // Загружаем имена игроков из памяти браузера
   const [names, setNames] = useState({ 
     p1: localStorage.getItem('ls_p1') || '', 
     p2: localStorage.getItem('ls_p2') || '' 
   });
 
-  const [currentStory, setCurrentStory] = useState(null);
-  const [phaseIdx, setPhaseIdx] = useState(0);
-  const [stepIdx, setStepIdx] = useState(0);
-  const [honestyScore, setHonestyScore] = useState(0);
-  const [totalQuestions, setTotalQuestions] = useState(0);
-  const [showDuel, setShowDuel] = useState(false);
-  const [showHonesty, setShowHonesty] = useState(false);
-  const [winner, setWinner] = useState(null);
+  const [currentStory, setCurrentStory] = useState(null); // Какая история выбрана
+  const [phaseIdx, setPhaseIdx] = useState(0);           // Текущая глава
+  const [stepIdx, setStepIdx] = useState(0);             // Текущая карточка
+  const [honestyScore, setHonestyScore] = useState(0);   // Очки честности
+  const [totalQuestions, setTotalQuestions] = useState(0); // Всего вопросов
+  const [showDuel, setShowDuel] = useState(false);       // Модалка "Кто сейчас"
+  const [showHonesty, setShowHonesty] = useState(false); // Модалка "Верю/Не верю"
+  const [winner, setWinner] = useState(null);            // Имя победителя в дуэли
 
   // --- ЭФФЕКТЫ ---
-  // Если имена уже сохранены в браузере, перекидываем в лобби автоматически
+
+  // Если имена уже есть в памяти, пропускаем экран ввода
   useEffect(() => {
     if (names.p1 && names.p2) setScreen('lobby');
   }, [names]);
 
-  // --- ЛОГИКА ---
-  // Сохранение имен и переход к выбору истории
+  // --- ФУНКЦИИ (ACTIONS) ---
+
+  // Сохраняем имена и заходим в игру
   const handleStart = () => {
     if (names.p1.trim().length < 2 || names.p2.trim().length < 2) return;
     localStorage.setItem('ls_p1', names.p1);
@@ -47,7 +50,7 @@ export default function App() {
     setScreen('lobby');
   };
 
-  // Инициализация начала игры
+  // Сбрасываем прогресс и начинаем историю
   const startStory = (id) => {
     setCurrentStory(id);
     setPhaseIdx(0);
@@ -57,14 +60,14 @@ export default function App() {
     setScreen('quest');
   };
 
-  // Обработка ответа на вопрос о честности
+  // Обработка кнопки "Верю" или "Не верю"
   const rateHonesty = (isHonest) => {
     if (isHonest) setHonestyScore(prev => prev + 1);
     setShowHonesty(false);
-    setStepIdx(prev => prev + 1);
+    setStepIdx(prev => prev + 1); // Переходим к следующему шагу
   };
 
-  // Функция запуска "Колеса судьбы"
+  // Логика выбора случайного игрока для дуэли
   const runDuel = () => {
     setWinner("ЖРЕБИЙ...");
     setTimeout(() => {
@@ -78,12 +81,13 @@ export default function App() {
     }, 1500);
   };
 
-  // Рендер контента (NPC или Карточка задания)
+  // Рендер игровых элементов (фразы Амалии или задания)
   const renderQuest = () => {
     const story = STORIES[currentStory];
     const phase = story.phases[phaseIdx];
     const isNpcStep = stepIdx < phase.npc.length;
 
+    // Если говорит персонаж (NPC)
     if (isNpcStep) {
       return (
         <div className="npc-container">
@@ -98,6 +102,7 @@ export default function App() {
 
     const card = phase.cards[stepIdx - phase.npc.length];
     
+    // Если карточки кончились
     if (!card) {
       if (phaseIdx < story.phases.length - 1) {
         setPhaseIdx(phaseIdx + 1);
@@ -108,7 +113,7 @@ export default function App() {
       return null;
     }
 
-    // Замена {name1} и {name2} на реальные имена игроков
+    // Подставляем имена в текст задания
     const text = card.text.replace(/{name1}/g, names.p1).replace(/{name2}/g, names.p2);
 
     return (
@@ -137,19 +142,19 @@ export default function App() {
   return (
     <div className="app-shell" style={{ backgroundColor: currentStory ? STORIES[currentStory].phases[phaseIdx].bg : '#fff0f3' }}>
       
-      {/* ЭКРАН: ВВОД ИМЕН */}
+      {/* 1. ЭКРАН ВВОДА ИМЕН */}
       {screen === 'setup' && (
         <section className="screen active">
           <div className="hero"><h1>LOVE<span>STORY</span></h1></div>
           <div className="clay-card">
             <input className="joy-input" placeholder="Имя 1" value={names.p1} onChange={e => setNames({...names, p1: e.target.value})} />
             <input className="joy-input" placeholder="Имя 2" value={names.p2} onChange={e => setNames({...names, p2: e.target.value})} style={{marginTop: '15px'}} />
-            <button className="btn-clay primary" style={{marginTop: '25px'}} onClick={handleStart}>НАЧАТЬ ПУТЬ</button>
+            <button className="btn-clay primary" style={{marginTop: '25px'}} onClick={handleStart}>НАЧАТЬ</button>
           </div>
         </section>
       )}
 
-      {/* ЭКРАН: ВЫБОР СЮЖЕТА */}
+      {/* 2. ЭКРАН ВЫБОРА ИСТОРИИ */}
       {screen === 'lobby' && (
         <section className="screen active">
           <div className="lobby-header"><h2>СЮЖЕТЫ</h2> <BookHeart color="#ff4d6d" /></div>
@@ -164,7 +169,7 @@ export default function App() {
         </section>
       )}
 
-      {/* ЭКРАН: ПРОЦЕСС ИГРЫ */}
+      {/* 3. ЭКРАН ИГРЫ */}
       {screen === 'quest' && (
         <section className="screen active">
           <div className="quest-header">
@@ -173,19 +178,19 @@ export default function App() {
           </div>
           {renderQuest()}
 
-          {/* КОЛЕСО СУДЬБЫ (OVERLAY) */}
+          {/* МОДАЛКА: ЖРЕБИЙ */}
           <AnimatePresence>
             {showDuel && (
               <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="overlay">
                 <div className="clay-box duel-modal">
                   <div className="wheel-placeholder">{winner || "?"}</div>
-                  <button className="btn-clay primary" onClick={runDuel} disabled={winner}>КРУТИТЬ</button>
+                  <button className="btn-clay primary" onClick={runDuel} disabled={winner}>УЗНАТЬ</button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* ПРОВЕРКА ЧЕСТНОСТИ (BOTTOM MODAL) */}
+          {/* МОДАЛКА: ЧЕСТНОСТЬ */}
           <AnimatePresence>
             {showHonesty && (
               <motion.div initial={{y:300}} animate={{y:0}} exit={{y:300}} className="overlay-bottom">
@@ -202,7 +207,7 @@ export default function App() {
         </section>
       )}
 
-      {/* ЭКРАН: ФИНАЛЬНЫЙ СЧЕТ */}
+      {/* 4. ЭКРАН ФИНАЛА */}
       {screen === 'results' && (
         <section className="screen active result-screen">
           <div className="clay-card">
